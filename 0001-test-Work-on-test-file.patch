@@ -1,0 +1,106 @@
+From f8a606fd06953e8d822b9f403d42d15a93842f34 Mon Sep 17 00:00:00 2001
+From: Bart Kuivenhoven <bemkuivenhoven@gmail.com>
+Date: Fri, 16 Aug 2013 10:01:42 +0200
+Subject: [PATCH] test: Work on test file
+
+By running the test script with the flag "auto" it will now run without
+demanding any input, which is ideal for automated testing environments.
+
+Also another test case has been added to test out the random
+configuration options, made possible by build.
+
+Signed-off-by: Bart Kuivenhoven <bemkuivenhoven@gmail.com>
+---
+ buildhelper.sh                        |  2 +-
+ src/main/resources/version.properties |  2 +-
+ test.sh                               | 28 +++++++++++++++++++++-------
+ 3 files changed, 23 insertions(+), 9 deletions(-)
+
+diff --git a/buildhelper.sh b/buildhelper.sh
+index c67009f..cdbda9a 100755
+--- a/buildhelper.sh
++++ b/buildhelper.sh
+@@ -10,7 +10,7 @@ echo "Creating the binary..."
+ cat <(echo -e "#!/bin/sh\nMYSELF=\`which \"\$0\" 2>/dev/null\`\n[ \$? -gt 0 -a -f \"\$0\" ] && MYSELF=\"./\$0\"\njava=java\nif test -n \"\$JAVA_HOME\"; then\n    java=\"\$JAVA_HOME/bin/java\"\nfi\nexec \"\$java\" \$java_args -jar \$MYSELF \"\$@\"\nexit 1\n") ./target/build.jar > build
+ chmod +x ./build
+ 
+-awk '{ if($1=="version.build") print $1 " " $2 " " ($3+1); else print $0; }' ./src/main/resources/version.properties > ./src/main/resources/version.properties.tmp && mv ./src/main/resources/version.properties.tmp ./src/main/resources/version.properties
++#awk '{ if($1=="version.build") print $1 " " $2 " " ($3+1); else print $0; }' ./src/main/resources/version.properties > ./src/main/resources/version.properties.tmp && mv ./src/main/resources/version.properties.tmp ./src/main/resources/version.properties
+ 
+ echo "Creating debian package..."
+ 
+diff --git a/src/main/resources/version.properties b/src/main/resources/version.properties
+index 3680d14..5f2bd1d 100644
+--- a/src/main/resources/version.properties
++++ b/src/main/resources/version.properties
+@@ -1,3 +1,3 @@
+ version.major = 0
+ version.minor = 2
+-version.build = 4
++version.build = 5
+diff --git a/test.sh b/test.sh
+index a5e217a..917493d 100755
+--- a/test.sh
++++ b/test.sh
+@@ -9,21 +9,29 @@ function clean()
+ 	$BUILD_DIR/build -c --config $PROJECT.config $PROJECT.build
+ }
+ 
+-function test1()
++function test_no()
+ {
+ 	echo "Compiling test project with all flags NO"
+ 	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build --configure --allno-config
+ 	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build -t random
+ }
+ 
+-function test2()
++function test_yes()
+ {
+ 	echo "Compiling test project with all flags YES"
+ 	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build --configure --allyes-config
+ 	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build -t random
+ }
+ 
+-function test3()
++function test_random()
++{
++	echo "Compiling test project with random flags"
++	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build --random-config
++	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build
++	
++}
++
++function test_user()
+ {
+ 	echo "Compiling test project with user defined flags"
+ 	$BUILD_DIR/build --config $PROJECT.config $PROJECT.build --configure
+@@ -35,15 +43,21 @@ echo "Testing build..."
+ cd $TEST_DIR
+ 
+ echo " ** Test 1:"
+-test1
++test_no
+ clean
+ 
+ echo " ** Test 2:"
+-test2
++test_yes
++clean
++
++echo " ** Test: 3"
++test_random
+ clean
+ 
+-echo " ** Test 3:"
+-test3
++if [ "$1" != "auto" ]; then
++echo " ** Test 4:"
++test_user
+ clean
++fi
+ 
+ cd $BUILD_DIR
+-- 
+1.8.3.2
+
