@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/bash
 
 TEST_DIR="./test"
 BUILD_DIR=$PWD
